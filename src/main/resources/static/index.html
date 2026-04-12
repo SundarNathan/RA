@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Job Analyzer</title>
+    <style>
+        body {
+            font-family: Arial;
+            margin: 20px;
+        }
+
+        textarea {
+            width: 400px;
+            height: 100px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 8px 12px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            width: 400px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>AI Job Analyzer</h2>
+
+<textarea id="resume" placeholder="Enter Resume"></textarea><br><br>
+<textarea id="job" placeholder="Enter Job Description"></textarea><br><br>
+
+<button id="analyzeBtn" onclick="analyze()">Analyze</button>
+<button onclick="interview()">Interview</button>
+
+<h3>Analysis Result:</h3>
+<div id="result"></div>
+
+<h3>Interview Questions:</h3>
+<ul id="questions"></ul>
+
+<script>
+
+    function analyze() {
+    const resume = document.getElementById("resume");
+    const job = document.getElementById("job");
+    const button = document.getElementById("analyzeBtn");
+    const resultDiv = document.getElementById("result");
+
+    const resumeText = resume.value;
+    const jobText = job.value;
+
+    // 🔒 Disable UI
+    button.disabled = true;
+    resume.disabled = true;
+    job.disabled = true;
+
+    resultDiv.innerHTML = "🤖 AI is analyzing... Please wait ⏳";
+
+    fetch("http://localhost:8080/analyze", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            resume: resumeText,
+            jobDescription: jobText
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        resultDiv.innerHTML = `
+        <h3>AI Analysis</h3>
+        <p><b>Match Score:</b> ${data.matchPercentage}%</p>
+        <p><b>Summary:</b> ${data.summary || data.message}</p>
+
+        <p><b>Missing Skills:</b></p>
+        <ul>
+            ${data.missingSkills.length === 0
+                ? "<li>None 🎉</li>"
+                : data.missingSkills.map(s => `<li>${s}</li>`).join("")}
+        </ul>
+
+        <p><b>Partial Skills:</b></p>
+        <ul>
+            ${data.partial.length === 0
+                ? "<li>None</li>"
+                : data.partial.map(s => `<li>${s}</li>`).join("")}
+        </ul>
+
+        <p><b>Suggested Questions:</b></p>
+        <ul>
+            ${data.questions.map(q => `<li>${q}</li>`).join("")}
+        </ul>
+        `;
+    })
+    .catch(err => {
+        resultDiv.innerHTML = "❌ Something went wrong. Try again.";
+        console.error(err);
+    })
+    .finally(() => {
+        button.disabled = false;
+        resume.disabled = false;
+        job.disabled = false;
+    });
+}
+
+    function interview() {
+        const resume = document.getElementById("resume").value;
+        const job = document.getElementById("job").value;
+        alert("Interview started");
+        document.getElementById("result").innerHTML = "🤖 AI is analyzing...";
+        fetch("/interview", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                resume: resume,
+                jobDescription: job
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            const list = document.getElementById("questions");
+            list.innerHTML = "";
+
+            data.questions.forEach(q => {
+                const li = document.createElement("li");
+                li.innerText = q;
+                list.appendChild(li);
+            });
+        });
+    }
+
+</script>
+
+</body>
+</html>
