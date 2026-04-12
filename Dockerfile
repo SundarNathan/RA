@@ -2,6 +2,9 @@ FROM eclipse-temurin:17-jdk
 
 WORKDIR /app
 
-COPY target/*.jar app.jar
+COPY . .
 
-CMD ["java", "-jar", "app.jar"]
+RUN chmod +x mvnw
+RUN ./mvnw clean package
+
+CMD ["java", "-jar", "target/*.jar"]
